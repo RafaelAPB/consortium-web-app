@@ -1,7 +1,6 @@
 const DBAccess = require('./../mongodb/accesses/mongo-access');
 const express = require('express');
 const router = express.Router();
-const jwt = require('jsonwebtoken');
 const dbConfig = require('../../config/db');
 const Utils = require('../mongodb/accesses/utils-accesses');
 const UtilsRoutes = require('../routes/utils-routes');
@@ -22,12 +21,12 @@ const WRONG_PASSWORD_PART_2 = " remaining attempts.";
 const WRONG_PASSWORD_INVALIDATE = "Your account has been blocked";
 const USER_INVALID = "";
 const USER_UNCONFIRMED = "Confirm your account";
-const COMP_ADDED = "Company added";
+const COMP_ADDED = "user added";
 const NOT_COMP = "Not a company";
-const DUP_ENTRY = "Company already exists";
+const DUP_ENTRY = "user already exists";
 const ERROR = "An error concerning DB has occurred.";
 const COMPANY_UPDATED = "Company has been updated.";
-
+const ALLOWED_ROLES = ["student","professor","recruiter"];
 /*
 router.options("/*", function(req, res, next){
     res.header('Access-Control-Allow-Origin', '*');
@@ -44,17 +43,28 @@ router.options("/*", function(req, res, next){
 //Registers a recruiter. Only users with the role "administrator" can do so.
 router.post('/register', passport.authenticate('jwt', {session: false}), function (req, res) {
     if(!Iam.isAdministrator(req))    {
-        UtilsRoutes.replyFailure(res,"Only recruiters can access this route",'');
+        UtilsRoutes.replyFailure(res,"Only administrators can access this route",'');
         return;
     }
+
     let name = req.fields.name;
     let email = req.fields.email;
     let password = req.fields.password;
-    let description = req.fields.description;
-    let location = req.fields.location;
-    let contact = req.fields.contact;
+    let organization = req.fields.organization;
+    let userType = JSON.parse(req.fields.userType);
 
-    DBAccess.recruiter.addRecruiter(name, email, password, description,location,contact, (err, addedCompany) => {
+    if (userType === "undefined" || organization === "undefined" || password === "undefined" || email === "undefined" || name === "undefined")  {
+        UtilsRoutes.replyFailure(res,"ERROR: Missing parameters","ERROR: Missing parameters");
+    }
+
+    for (const candidateRole of userType)   {
+        if (!Utils.contains(ALLOWED_ROLES, candidateRole))   {
+            UtilsRoutes.replyFailure(res,"ERROR: user type does not exist","ERROR: user type does not exist");
+            return;
+        }
+    }
+
+    DBAccess.users.addUser(name, email, password, organization, userType, (err, addedCompany) =>     {
         if (err)  {
             if (err.name === 'MongoError' && err.code === 11000)    {
                 //Duplicated username or contact
@@ -63,10 +73,13 @@ router.post('/register', passport.authenticate('jwt', {session: false}), functio
                 return UtilsRoutes.replyFailure(res,err,ERROR);
             }
         }  else {
-            ba_logger.ba("Recruiter:"+ name + ":" + "registered");
-            return UtilsRoutes.replySuccess(res,addedCompany,COMP_ADDED);
+            ba_logger.ba(userType + ":" + name + "registered");
         }
     });
+
+    UtilsRoutes.replySuccess(res,"added user",COMP_ADDED);
+
+
 });
 
 //Logins a user and returns a jwt token
@@ -86,7 +99,7 @@ router.post('/login', (req, res) => {
             return UtilsRoutes.replyFailure(res, err, USER_NOT_FOUND);
         }
 
-        if(user.validation === "confirmed") {
+        //if(user.validation === "confirmed") {
             try {
                 var passwordsMatch = await Utils.comparePasswordAsync(password, user.password);
             }   catch (e)   {
@@ -94,7 +107,7 @@ router.post('/login', (req, res) => {
             }
 
             if (!passwordsMatch)    {
-                return UtilsRoutes.replyFailure(res,err,WRONG_PASSWORD_PART_1 + user.remaining_attempts + WRONG_PASSWORD_PART_2);
+                return UtilsRoutes.replyFailure(res,err,WRONG_PASSWORD_PART_1);
             }   else    {
 
                 let userInfo = user._doc;
@@ -109,7 +122,7 @@ router.post('/login', (req, res) => {
                 payload["roles"] = userInfo.roles;
 
                 console.log("New Login, original token content: \n", payload);
-                NtuaAPI.person.getPerson(email, (response, error) =>  {
+                NtuaAPI.person.getPerson(email, async (response, error) =>  {
                     if (error)  {
                         ba_logger.ba("Failed request to NTUA")
                         throw new Error(error);
@@ -126,31 +139,21 @@ router.post('/login', (req, res) => {
                         }
                     }
 
-                    console.log("New Login, token content: \n", payload);
 
-                    const token = jwt.sign(payload, JWT_SECRET_SIGNING_KEY, {
-                        expiresIn: JWT_LIFETIME,
-                        algorithm: JWT_ALGORITHM,
-                        jwtid: Math.random().toString().split(".")[1]
-                    });
 
-                    let identityToken =    {
-                        token: 'bearer ' + token,
-                        user: {
-                            id: payload["id"],
-                            email: payload["email"],
-                            name: payload["name"],
-                            roles: payload["roles"],
-                        },
-                    };
+                    console.log("New Login, payload content: \n", payload);
+                    payload = UtilsRoutes.createPayload(payload);
 
+                    console.log("New Login, payload content after Solid: \n", payload);
+                    const token = await UtilsRoutes.createBearerToken(payload);
+                    const identityToken = await UtilsRoutes.createIdentityToken(token, payload,false);
 
                     //logger.warn("Login: "+ data.user.type + "," + data.user.name + ", logged in at " + Utils.utc);
                     ba_logger.ba("Login:" + identityToken.user.id + ":" + identityToken.user.email);
                     UtilsRoutes.replySuccess(res, identityToken, "Logged in");
                 });
             }
-        }
+
     });
 });
 
