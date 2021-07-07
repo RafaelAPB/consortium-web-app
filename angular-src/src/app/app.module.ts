@@ -26,6 +26,7 @@ import { ProfileComponent } from './general/profile/profile.component';
 import { LoginStudentComponent } from './general/login/login-student/login-student.component';
 import { LoginSealComponent } from './general/login/login-seal/login-seal.component';
 import { AuthComponent } from './general/auth/auth.component';
+import { ChangePwComponent } from './general/login/change-pw/change-pw.component';
 
 const appRoutes: Routes = [
     {path: '', component: HomeComponent},
@@ -47,6 +48,7 @@ const appRoutes: Routes = [
 
     {path: 'login', children: [
             {path: '', component: LoginComponent},
+            {path: 'changePassword', component: ChangePwComponent},
             {path: 'callback/seal', component: LoginSealComponent}
         ]},
 
@@ -68,7 +70,8 @@ const appRoutes: Routes = [
         RecruitingComponent,
         LoginStudentComponent,
         LoginSealComponent,
-        AuthComponent
+        AuthComponent,
+        ChangePwComponent
 
     ],
     imports: [
