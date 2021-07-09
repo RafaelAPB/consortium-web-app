@@ -12,13 +12,14 @@ import { AuthService } from './services/auth.service';
 import { FlashMessagesModule } from 'angular2-flash-messages';
 import { AuthGuardService } from './services/auth-guard.service';
 import { FooterComponent } from './general/footer/footer.component';
-import {MockBackend} from '@angular/http/testing';
+import { MockBackend } from '@angular/http/testing';
 import { AgmCoreModule } from '@agm/core';
 import { PrivacyPolicyComponent } from './general/privacy-policy/privacy-policy.component';
-import { Vars } from  '../../.env';
+import { Vars } from '../../.env';
 import { ChartsModule } from 'ng2-charts';
-import {NgbModule} from '@ng-bootstrap/ng-bootstrap';
-import { RecruitingComponent } from './qualichain/recruiting/recruiting.component'
+import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
+import { RecruitingComponent } from './qualichain/recruiting/recruiting.component';
+import { RecruitingAuthComponent } from './qualichain/recruitingAuth/recruitingAuth.component';
 import { RegisterComponent} from './general/register/register.component';
 import { CompanyRegisterComponent } from './general/register/company-register/company-register.component';
 import { LoginComponent } from './general/login/login.component';
@@ -28,9 +29,11 @@ import { LoginSealComponent } from './general/login/login-seal/login-seal.compon
 import { AuthComponent } from './general/auth/auth.component';
 import { ChangePwComponent } from './general/login/change-pw/change-pw.component';
 
+
 const appRoutes: Routes = [
     {path: '', component: HomeComponent},
     {path: 'recruiting', component: RecruitingComponent},
+    {path: 'recruitingAuth', component: RecruitingAuthComponent, canActivate:[AuthGuardService]},
     {path: 'register', children: [
             {path: '', component: RegisterComponent},
             {path: 'company', component: CompanyRegisterComponent}
@@ -68,6 +71,7 @@ const appRoutes: Routes = [
         FooterComponent,
         PrivacyPolicyComponent,
         RecruitingComponent,
+        RecruitingAuthComponent,
         LoginStudentComponent,
         LoginSealComponent,
         AuthComponent,
