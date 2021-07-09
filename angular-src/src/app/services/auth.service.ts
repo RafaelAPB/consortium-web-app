@@ -51,6 +51,22 @@ constructor(private http:Http, public jwtHelper: JwtHelperService) { }
   }
 
 
+  changePassword(formData) {
+
+    const headers = new Headers();
+    if (Vars.ENVIRONMENT === 'PRODUCTION')    {
+      this.login_url = "users/login";
+    } else if (Vars.ENVIRONMENT === 'INTEGRATION')    {
+      this.login_url = "https://qualichain.herokuapp.com/users/changePassword";
+    } else if (Vars.ENVIRONMENT === 'TEST')    {
+      this.login_url = "http://localhost:8080/users/changePassword";
+    }
+
+    headers.append('Content-Type', 'application/json');
+    // @ts-ignore
+    return this.http.post(this.login_url, formData, { observe: 'events',  reportProgress: true }).pipe(map(res => res.json()));
+  }
+
   authUser(formData) {
 
     const headers = new Headers();
@@ -86,7 +102,7 @@ constructor(private http:Http, public jwtHelper: JwtHelperService) { }
   }
 
 
-  loginSeal(code, scope) {
+  loginSeal(code, state) {
     let url: string;
     if (Vars.ENVIRONMENT === 'PRODUCTION')    {
       url = "auth/login/seal";
@@ -97,7 +113,7 @@ constructor(private http:Http, public jwtHelper: JwtHelperService) { }
     }
     const formData: FormData = new FormData();
     formData.append('code', code);
-    formData.append('scope', scope);
+    formData.append('state', state);
     const headers = new Headers();
     // @ts-ignore
     return this.http.post(url, formData, { headers: headers, observe: 'events',  reportProgress: true }).pipe(map(res => res.json()));

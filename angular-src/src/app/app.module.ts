@@ -26,6 +26,9 @@ import { LoginComponent } from './general/login/login.component';
 import { ProfileComponent } from './general/profile/profile.component';
 import { LoginStudentComponent } from './general/login/login-student/login-student.component';
 import { LoginSealComponent } from './general/login/login-seal/login-seal.component';
+import { AuthComponent } from './general/auth/auth.component';
+import { ChangePwComponent } from './general/login/change-pw/change-pw.component';
+
 
 const appRoutes: Routes = [
     {path: '', component: HomeComponent},
@@ -37,8 +40,18 @@ const appRoutes: Routes = [
         ]},
     {path: 'profile', component: ProfileComponent, canActivate:[AuthGuardService]},
 
+    /*
+    {path: 'auth', children:    [
+            {path: '.well-known', children: [
+                    {path:'openid-configuration', redirectTo: 'http://web.ist.utl.pt/~ist180970/qualichain/.wellknown'}
+                ]},
+            {path: 'jwks', redirectTo: 'http://web.ist.utl.pt/~ist180970/qualichain/jwks'}
+        ]},
+    */
+
     {path: 'login', children: [
             {path: '', component: LoginComponent},
+            {path: 'changePassword', component: ChangePwComponent},
             {path: 'callback/seal', component: LoginSealComponent}
         ]},
 
@@ -60,7 +73,9 @@ const appRoutes: Routes = [
         RecruitingComponent,
         RecruitingAuthComponent,
         LoginStudentComponent,
-        LoginSealComponent
+        LoginSealComponent,
+        AuthComponent,
+        ChangePwComponent
 
     ],
     imports: [
